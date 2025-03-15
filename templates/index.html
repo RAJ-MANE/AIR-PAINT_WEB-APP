@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Air Paint - Draw with Hand Gestures</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Air Paint is an innovative web app that allows you to draw using hand gestures and voice commands. Experience AI-powered digital painting without a mouse or stylus.">
+    <meta name="keywords" content="air paint, gesture drawing, AI drawing tool, voice command drawing, digital painting, interactive art, web-based painting">
+    <meta name="author" content="Raj Mane and Team">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph for Social Media -->
+    <meta property="og:title" content="Air Paint - Draw with Hand Gestures">
+    <meta property="og:description" content="Use your hands to draw in the air with Air Paint, an AI-powered web app supporting voice commands for a seamless digital art experience.">
+    <meta property="og:image" content="{{ url_for('static', filename='preview.png') }}">
+    <meta property="og:url" content="https://yourwebsite.com">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter Card for better social sharing -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Air Paint - Draw with Hand Gestures">
+    <meta name="twitter:description" content="Experience AI-powered drawing with gestures and voice commands. No stylus needed!">
+    <meta name="twitter:image" content="{{ url_for('static', filename='preview.png') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils"></script>
+</head>
+<body>
+    <h1>Air Paint Web App</h1>
+
+    <div class="container">
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <canvas id="overlay"></canvas>
+    </div>
+
+    <div class="controls">
+        <button id="startDrawing">Start Drawing</button>
+        <button id="stopDrawing">Stop Drawing</button>
+        <button id="clear">Clear Canvas</button>
+    </div>
+
+    <div id="colorButtons">
+        <button class="color-button" style="background-color: red;" data-color="red"></button>
+        <button class="color-button" style="background-color: blue;" data-color="blue"></button>
+        <button class="color-button" style="background-color: green;" data-color="green"></button>
+        <button class="color-button" style="background-color: yellow;" data-color="yellow"></button>
+        <button class="color-button" style="background-color: black;" data-color="black"></button>
+        <button class="color-button" style="background-color: white;" data-color="white"></button>
+        <button class="color-button" style="background-color: pink;" data-color="pink"></button>
+        <button class="color-button" style="background-color: purple;" data-color="purple"></button>
+        <button class="color-button" style="background-color: orange;" data-color="orange"></button>
+        <button class="color-button" style="background-color: brown;" data-color="brown"></button>
+        <button class="color-button" style="background-color: gray;" data-color="gray"></button>
+    </div>
+    <div class="voice-commands-list">
+        <h2>🎤 Available Voice Commands</h2>
+        <ul>
+            <li><b>"Start drawing"</b> → Enables drawing mode</li>
+            <li><b>"Stop drawing"</b> → Disables drawing mode</li>
+            <li><b>"Clear canvas"</b> → Clears the canvas</li>
+            <li><b>"Take screenshot"</b> → Saves your drawing</li>
+        </ul>
+    </div>
+    
+    <footer>
+        <p>Developed by Raj Mane and Team</p>
+        <div class="footer-links">
+            <a href="{{ url_for('privacy_policy') }}" style="color: white; text-decoration: none;">Privacy Policy</a> |
+            <a href="{{ url_for('terms_conditions') }}" style="color: white; text-decoration: none;">Terms & Conditions</a> |
+            <a href="{{ url_for('contact') }}" style="color: white; text-decoration: none;">Contact Developer</a>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

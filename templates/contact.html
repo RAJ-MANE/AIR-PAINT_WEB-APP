@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Developer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Contact Developer</h1>
+
+    <div class="team-logo">
+        <img src="{{ url_for('static', filename='images/team_logo.png') }}" alt="Team Logo">
+    </div>
+
+    <div class="team-info">
+        <h2>Meet Our Team</h2>
+        <div class="team-grid">
+            <div class="team-member">
+                <h3>Raj Mane - Lead Developer</h3>
+                
+            </div>
+            <div class="team-member">
+                <h3>Mithilesh Kushwaha</h3>
+            </div>
+            <div class="team-member">
+                <h3>Nandkishor Kumhar</h3>
+            </div>
+            <div class="team-member">
+                <h3>Rahul Kumawat</h3>
+            </div>
+            <div class="team-member">
+                <h3>Nainika Kunder</h3>
+            </div>
+            <div class="team-member">
+                <h3>Sayyam Lohade</h3>
+            </div>
+            <div class="team-member">
+                <h3>Avaneesh Lotlikar</h3>
+            </div>
+            <div class="team-member">
+                <h3>Romil Madhavi</h3>
+            </div>
+            <div class="team-member">
+                <h3>Yadnik Mali</h3>
+            </div>
+            <div class="team-member">
+                <h3>Shubham Mane</h3>
+            </div>
+        </div>
+    </div>
+    
+
+    <div class="contact-links">
+        <h2>Get in Touch</h2>
+        <p>Email: <a href="mailto:aceryzen118@gmail.com">EMail</a></p>
+        <p>LinkedIn: <a href="https://www.linkedin.com/in/raj-mane-5a6067328" target="_blank">LinkedIn Profile</a></p>
+        <p>GitHub: <a href="https://github.com/RAJ-MANE" target="_blank">GitHub Profile</a></p>
+    </div>
+
+    <footer>
+        <a href="{{ url_for('home') }}" style="color: white; text-decoration: none;">⬅ Back to Home</a> 
+    </footer>
+</body>
+</html>
