@@ -3,4 +3,5 @@ gunicorn
 mediapipe==0.10.21
 numpy
 opencv-python
-SpeechRecognition
+Werkzeug==2.2.3
+
