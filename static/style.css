@@ -224,25 +224,18 @@ input[type="color"]:hover {
 }
 
 .voice-commands-list {
-  margin-top: 30px;
-  padding: 25px;
+  margin-top: 20px;
+  padding: 20px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   text-align: center;
-  width: 600px;
-  max-width: 90%;
+  width: 90%;
+  max-width: 700px;
   color: white;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
   animation: fadeIn 1.5s ease-out;
-  transform-origin: top;
-}
-
-.voice-commands-list:hover {
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.15);
-  transform: translateY(-5px);
 }
 
 .voice-commands-list h2 {
@@ -254,96 +247,56 @@ input[type="color"]:hover {
   text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
+/* Command Boxes */
+.voice-commands-list .command-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  font-size: 1.1rem;
+  min-width: 180px;
+}
+
+.voice-commands-list .command-box:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px);
+}
+
+/* Spacing Fix */
 .voice-commands-list ul {
   list-style: none;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 15px;
   margin-top: 20px;
 }
 
-.voice-commands-list li {
-  font-size: 1.1rem;
-  margin: 0;
-  padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.voice-commands-list li:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Add responsive design */
+/* Responsive Fix */
 @media (max-width: 768px) {
-  .container {
-    width: 90%;
-    height: auto;
-    aspect-ratio: 4/3;
-  }
-  
-  h1 {
-    font-size: 2.2rem;
-  }
-  
-  .controls {
-    flex-wrap: wrap;
+  .voice-commands-list {
+    width: 95%;
     padding: 15px;
   }
-  
+
+  .voice-commands-list h2 {
+    font-size: 1.5rem;
+  }
+
   .voice-commands-list ul {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .voice-commands-list .command-box {
+    width: 90%;
+    text-align: center;
   }
 }
 
-/* Add glass effect on hover */
-.container::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0));
-  border-radius: 16px;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-}
-
-.container:hover::after {
-  opacity: 1;
-}
-
-/* Animation for controls */
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-  100% { transform: scale(1); }
-}
-
-.controls:hover button {
-  animation: pulse 2s infinite;
-  animation-delay: calc(var(--i) * 0.2s);
-}
-
-/* Add subtle rainbow effect to voice commands list */
-@keyframes rainbow {
-  0% { border-color: rgba(255, 0, 0, 0.2); }
-  20% { border-color: rgba(255, 165, 0, 0.2); }
-  40% { border-color: rgba(255, 255, 0, 0.2); }
-  60% { border-color: rgba(0, 128, 0, 0.2); }
-  80% { border-color: rgba(0, 0, 255, 0.2); }
-  100% { border-color: rgba(238, 130, 238, 0.2); }
-}
-
-.voice-commands-list {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: rainbow 10s linear infinite, fadeIn 1.5s ease-out;
-}
