@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, send_from_directory
 
 app = Flask(__name__)
 
@@ -18,5 +18,10 @@ def terms_conditions():
 def contact():
     return render_template('contact.html')  # Contact page
 
+@app.route('/favicon.png')
+def favicon():
+    return send_from_directory('static', 'favicon.png', mimetype='image/png')
+
 if __name__ == '__main__':
     app.run(debug=True)
+
