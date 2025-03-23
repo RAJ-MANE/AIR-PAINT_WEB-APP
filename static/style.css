@@ -28,7 +28,7 @@ body::before {
 
 h1 {
   margin-bottom: 20px;
-  font-size: 3rem;
+  font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: 2px;
   text-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -76,15 +76,18 @@ video, canvas {
 .controls {
   margin-top: 25px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  gap: 18px;
+  gap: 12px;
   background: rgba(255, 255, 255, 0.08);
-  padding: 18px 30px;
+  padding: 15px;
   border-radius: 60px;
   backdrop-filter: blur(10px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 640px;
 }
 
 .controls:hover {
@@ -93,8 +96,10 @@ video, canvas {
 }
 
 button {
-  padding: 12px 24px;
-  font-size: 16px;
+  flex: 1 0 auto;
+  min-width: 100px;
+  padding: 12px;
+  font-size: clamp(14px, 3vw, 16px);
   font-weight: 600;
   border: none;
   cursor: pointer;
@@ -146,8 +151,8 @@ button:active {
 }
 
 input[type="color"] {
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   border: none;
   background: none;
   cursor: pointer;
@@ -176,6 +181,11 @@ input[type="color"]:hover {
   margin-top: 20px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.05);
   transition: all 0.3s ease;
+  width: 100%;
+  max-width: 640px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
 
 .brush-size-control:hover {
@@ -196,6 +206,8 @@ input[type="color"]:hover {
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  min-width: 120px;
 }
 
 .status {
@@ -229,7 +241,7 @@ input[type="color"]:hover {
   background: rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   text-align: center;
-  width: 90%;
+  width: 100%;
   max-width: 700px;
   color: white;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.1);
@@ -239,7 +251,7 @@ input[type="color"]:hover {
 }
 
 .voice-commands-list h2 {
-  font-size: 1.8rem;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
   margin-bottom: 15px;
   background: linear-gradient(135deg, #fff, #a0a0a0);
   -webkit-background-clip: text;
@@ -258,8 +270,9 @@ input[type="color"]:hover {
   background: rgba(255, 255, 255, 0.1);
   box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  font-size: 1.1rem;
-  min-width: 180px;
+  font-size: clamp(0.9rem, 3vw, 1.1rem);
+  min-width: 120px;
+  width: 100%;
 }
 
 .voice-commands-list .command-box:hover {
@@ -278,25 +291,64 @@ input[type="color"]:hover {
   margin-top: 20px;
 }
 
-/* Responsive Fix */
+.voice-commands-list li {
+  flex: 1 0 calc(50% - 15px);
+  max-width: 250px;
+}
+
+/* Media Queries for Responsive Design */
 @media (max-width: 768px) {
-  .voice-commands-list {
-    width: 95%;
-    padding: 15px;
+  .container {
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    aspect-ratio: 4/3;
   }
-
-  .voice-commands-list h2 {
-    font-size: 1.5rem;
+  
+  .controls {
+    border-radius: 30px;
+    padding: 15px 12px;
   }
-
-  .voice-commands-list ul {
-    flex-direction: column;
-    align-items: center;
+  
+  button {
+    padding: 10px;
+    min-width: 80px;
   }
-
-  .voice-commands-list .command-box {
-    width: 90%;
-    text-align: center;
+  
+  .voice-commands-list li {
+    flex: 1 0 100%;
+    max-width: 100%;
   }
 }
 
+@media (max-width: 480px) {
+  .container {
+    width: 100%;
+    aspect-ratio: 4/3;
+  }
+  
+  .controls {
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px 10px;
+  }
+  
+  button {
+    font-size: 14px;
+    padding: 8px;
+  }
+  
+  input[type="color"] {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .brush-size-control {
+    padding: 10px 15px;
+  }
+  
+  .brush-size-control label {
+    font-size: 14px;
+    margin-right: 10px;
+  }
+}
