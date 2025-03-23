@@ -47,6 +47,7 @@ h1 {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(0, 0, 0, 0.2); /* Background for when camera isn't active */
 }
 
 .container:hover {
@@ -54,7 +55,21 @@ h1 {
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 30px rgba(255, 255, 255, 0.15);
 }
 
-video, canvas {
+video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 15px;
+  object-fit: cover;
+  /* These properties ensure better mobile compatibility */
+  transform: rotateY(0deg); /* Fixes mirrored video on some devices */
+  z-index: 0;
+  background-color: transparent;
+}
+
+canvas {
   position: absolute;
   top: 0;
   left: 0;
@@ -66,6 +81,7 @@ video, canvas {
 
 #canvas {
   z-index: 1;
+  touch-action: none; /* Prevents default touch actions to enable drawing on mobile */
 }
 
 #overlay {
@@ -108,6 +124,7 @@ button {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
 }
 
 button::before {
@@ -160,6 +177,16 @@ input[type="color"] {
   overflow: hidden;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  -webkit-appearance: none; /* Better mobile compatibility */
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 50%;
 }
 
 input[type="color"]:hover {
@@ -208,6 +235,17 @@ input[type="color"]:hover {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
   flex: 1;
   min-width: 120px;
+  -webkit-appearance: none; /* Better mobile compatibility */
+}
+
+.brush-size-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #00b09b;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
 
 .status {
@@ -350,5 +388,24 @@ input[type="color"]:hover {
   .brush-size-control label {
     font-size: 14px;
     margin-right: 10px;
+  }
+}
+
+/* Add compatibility for iOS Safari */
+@supports (-webkit-touch-callout: none) {
+  .container {
+    /* Fix for iOS Safari height issues */
+    height: 0;
+    padding-bottom: 75%; /* Maintain 4:3 aspect ratio */
+  }
+  
+  video {
+    /* Fix for iOS Safari video positioning */
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 }
