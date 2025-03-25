@@ -1,7 +1,7 @@
 body {
   text-align: center;
-  font-family: 'Poppins', sans-serif;
-  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+  font-family: 'Inter', 'Poppins', sans-serif;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -21,13 +21,13 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.05'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3Cpath d='M-31 229L237 261 390 382 603 493 308.5 537.5 101.5 381.5M370 905L295 764'/%3E%3Cpath d='M520 660L578 842 731 737 840 599 603 493 520 660 295 764 309 538 390 382 539 269 769 229 577.5 41.5 370 105 295 -36 126.5 79.5 237 261 102 382 40 599 -69 737 127 880'/%3E%3Cpath d='M520-140L578.5 42.5 731-63M603 493L539 269 237 261 370 105M902 382L539 269M390 382L102 382'/%3E%3Cpath d='M-222 42L126.5 79.5 370 105 539 269 577.5 41.5 927 80 769 229 902 382 603 493 731 737M295-36L577.5 41.5M578 842L295 764M40-201L127 80M102 382L-261 269'/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat fixed;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 800 800'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.03'%3E%3Cpath d='M769 229L1037 260.9M927 880L731 737 520 660 309 538 40 599 295 764 126.5 879.5 40 599-197 493 102 382-31 229 126.5 79.5-69-63'/%3E%3C/g%3E%3C/svg%3E") center/cover no-repeat fixed;
   pointer-events: none;
   z-index: -1;
 }
 
 h1 {
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   font-size: clamp(2rem, 5vw, 3rem);
   font-weight: 800;
   letter-spacing: 2px;
@@ -47,7 +47,7 @@ h1 {
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background-color: rgba(0, 0, 0, 0.2); /* Background for when camera isn't active */
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 .container:hover {
@@ -63,8 +63,7 @@ video {
   height: 100%;
   border-radius: 15px;
   object-fit: cover;
-  /* These properties ensure better mobile compatibility */
-  transform: rotateY(0deg); /* Fixes mirrored video on some devices */
+  transform: rotateY(0deg);
   z-index: 0;
   background-color: transparent;
 }
@@ -81,7 +80,7 @@ canvas {
 
 #canvas {
   z-index: 1;
-  touch-action: none; /* Prevents default touch actions to enable drawing on mobile */
+  touch-action: none;
 }
 
 #overlay {
@@ -124,7 +123,7 @@ button {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.2);
   position: relative;
   overflow: hidden;
-  -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 button::before {
@@ -177,7 +176,7 @@ input[type="color"] {
   overflow: hidden;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4), 0 0 0 3px rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
-  -webkit-appearance: none; /* Better mobile compatibility */
+  -webkit-appearance: none;
 }
 
 input[type="color"]::-webkit-color-swatch-wrapper {
@@ -192,11 +191,6 @@ input[type="color"]::-webkit-color-swatch {
 input[type="color"]:hover {
   transform: scale(1.15) rotate(15deg);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.15);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-30px); }
-  to { opacity: 1; transform: translateY(0); }
 }
 
 .brush-size-control {
@@ -235,7 +229,7 @@ input[type="color"]:hover {
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
   flex: 1;
   min-width: 120px;
-  -webkit-appearance: none; /* Better mobile compatibility */
+  -webkit-appearance: none;
 }
 
 .brush-size-control input[type="range"]::-webkit-slider-thumb {
@@ -297,7 +291,6 @@ input[type="color"]:hover {
   text-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Command Boxes */
 .voice-commands-list .command-box {
   display: inline-flex;
   align-items: center;
@@ -318,7 +311,6 @@ input[type="color"]:hover {
   transform: translateY(-3px);
 }
 
-/* Spacing Fix */
 .voice-commands-list ul {
   list-style: none;
   padding: 10px;
@@ -334,7 +326,6 @@ input[type="color"]:hover {
   max-width: 250px;
 }
 
-/* Media Queries for Responsive Design */
 @media (max-width: 768px) {
   .container {
     width: 100%;
@@ -391,16 +382,13 @@ input[type="color"]:hover {
   }
 }
 
-/* Add compatibility for iOS Safari */
 @supports (-webkit-touch-callout: none) {
   .container {
-    /* Fix for iOS Safari height issues */
     height: 0;
-    padding-bottom: 75%; /* Maintain 4:3 aspect ratio */
+    padding-bottom: 75%;
   }
   
   video {
-    /* Fix for iOS Safari video positioning */
     position: absolute;
     top: 0;
     left: 0;
@@ -409,3 +397,8 @@ input[type="color"]:hover {
     object-fit: cover;
   }
 }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}  
