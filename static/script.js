@@ -83,7 +83,7 @@ const camera = new Camera(video, {
 camera.start();
 
 function checkForHeart() {
-    if (path.length < 50) return;
+    if (path.length < 30) return; // Minimum strokes required
 
     let minX = Math.min(...path.map(p => p.x));
     let maxX = Math.max(...path.map(p => p.x));
@@ -94,28 +94,34 @@ function checkForHeart() {
     let height = maxY - minY;
     let aspectRatio = width / height;
 
-    // Check if drawn in pink color
     if (color !== "pink") return;
 
-    // Adjusted aspect ratio range for more flexibility
-    if (aspectRatio < 0.6 || aspectRatio > 1.4 || width < 50 || height < 50) return;
+    // Check for a circle (roughly equal width & height)
+    if (aspectRatio >= 0.8 && aspectRatio <= 1.2 && width >= 30 && height >= 30) {
+        console.log("⭕ Pink Circle Detected! Playing Sound...");
+        heartSound.play().catch(e => console.log("Sound play blocked:", e));
+        path = [];
+        return;
+    }
 
-    let centerX = (minX + maxX) / 2;
-    let leftSide = path.filter(p => p.x < centerX);
-    let rightSide = path.filter(p => p.x > centerX);
+    // Check for a heart shape (wider aspect ratio tolerance)
+    if (aspectRatio >= 0.4 && aspectRatio <= 1.7 && width >= 30 && height >= 30) {
+        let centerX = (minX + maxX) / 2;
+        let leftSide = path.filter(p => p.x < centerX);
+        let rightSide = path.filter(p => p.x > centerX);
 
-    // Ensure left and right sides are balanced
-    if (Math.abs(leftSide.length - rightSide.length) > 30) return;
+        if (Math.abs(leftSide.length - rightSide.length) > 50) return;
 
-    // Ensure a distinct bottom point
-    let bottomPoint = path.reduce((a, b) => (a.y > b.y ? a : b));
-    if (bottomPoint.y < maxY - 15) return;
+        let bottomPoint = path.reduce((a, b) => (a.y > b.y ? a : b));
+        if (bottomPoint.y < maxY - 25) return; // Increased tolerance for imperfect bottom
 
-    console.log("💖 Pink Heart Detected! Playing Sound...");
-    heartSound.play().catch(e => console.log("Sound play blocked:", e));
-
-    path = []; // Reset after detection
+        console.log("💖 Pink Heart Detected! Playing Sound...");
+        heartSound.play().catch(e => console.log("Sound play blocked:", e));
+        
+        path = [];
+    }
 }
+
 
 // Standard Colors
 const standardColors = ["red", "blue", "green", "yellow", "black", "white", "pink", "purple", "orange", "brown", "gray"];
