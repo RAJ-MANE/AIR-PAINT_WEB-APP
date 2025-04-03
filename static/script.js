@@ -9,6 +9,10 @@ const overlayCtx = overlayCanvas.getContext("2d");
 canvas.width = overlayCanvas.width = 640;
 canvas.height = overlayCanvas.height = 480;
 
+// Optimize canvas performance
+overlayCtx.imageSmoothingEnabled = false;
+ctx.imageSmoothingEnabled = false;
+
 // State Variables
 let drawing = false;
 let color = "red";
@@ -16,16 +20,24 @@ let lastX = 0, lastY = 0;
 let path = [];
 let aiDrawing = false;
 let aiDrawingGenerator = null;
+let lastCommandTime = 0;
+const COMMAND_DEBOUNCE = 1000; // 1 second debounce
+let lastFrameTime = 0;
+const FRAME_INTERVAL = 1000 / 60; // 60 FPS cap
 
-// Heart Sound
+// Text input variables
+let isTyping = false;
+let currentText = '';
+let textX = 0;
+let textY = 0;
+let isCalculating = false;
+
+// Heart Sound - Preload for better performance
 const heartSound = new Audio("static/heart_sound.mp3");
-
-// Ensure sound plays only once per heart detection
+heartSound.preload = 'auto';
 let heartPlayed = false;
 
-
-
-// Flip Canvas for Mirroring
+// Flip Canvas for Mirroring with optimized context saving
 function flipCanvas() {
     ctx.save();
     ctx.translate(canvas.width, 0);
@@ -34,94 +46,448 @@ function flipCanvas() {
     ctx.restore();
 }
 
-// MediaPipe Hands Setup
+// MediaPipe Hands Setup with optimized settings
 const hands = new Hands({ locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
 hands.setOptions({
     maxNumHands: 1,
-    modelComplexity: 1,
-    minDetectionConfidence: 0.8,
-    minTrackingConfidence: 0.8
+    modelComplexity: 0, // Reduced complexity for better performance
+    minDetectionConfidence: 0.7, // Slightly reduced for better responsiveness
+    minTrackingConfidence: 0.7
 });
 
 hands.onResults(results => {
-    flipCanvas();
+    // Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(() => {
+        const currentTime = performance.now();
+        if (currentTime - lastFrameTime < FRAME_INTERVAL) return;
+        lastFrameTime = currentTime;
 
-    if (results.multiHandLandmarks.length > 0) {
-        const landmarks = results.multiHandLandmarks[0];
-        let x = landmarks[8].x * overlayCanvas.width;
-        let y = landmarks[8].y * overlayCanvas.height;
+        flipCanvas();
 
-        x = overlayCanvas.width - x; // Mirror the x-coordinate
+        if (results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            let x = landmarks[8].x * overlayCanvas.width;
+            let y = landmarks[8].y * overlayCanvas.height;
 
-        if (drawing && !aiDrawing) {
-            overlayCtx.strokeStyle = color;
-            overlayCtx.lineWidth = 5;
-            overlayCtx.lineCap = "round";
-            overlayCtx.beginPath();
-            overlayCtx.moveTo(lastX, lastY);
-            overlayCtx.lineTo(x, y);
-            overlayCtx.stroke();
+            x = overlayCanvas.width - x; // Mirror the x-coordinate
 
-            path.push({ x, y });
+            if (drawing && !aiDrawing) {
+                overlayCtx.strokeStyle = color;
+                overlayCtx.lineWidth = 5;
+                overlayCtx.lineCap = "round";
+                overlayCtx.beginPath();
+                overlayCtx.moveTo(lastX, lastY);
+                overlayCtx.lineTo(x, y);
+                overlayCtx.stroke();
 
-            if (path.length > 70) checkForHeart();
+                // Limit path array size for better performance
+                path.push({ x, y });
+                if (path.length > 50) path.shift();
+
+                if (path.length > 30) checkForHeart();
+            }
+
+            lastX = x;
+            lastY = y;
         }
-
-        lastX = x;
-        lastY = y;
-    }
+    });
 });
 
-// Camera Setup
+// Camera Setup with optimized frame rate
 const camera = new Camera(video, {
     onFrame: async () => {
         await hands.send({ image: video });
     },
     width: 640,
-    height: 480
+    height: 480,
+    frameRate: 30 // Limit frame rate for better performance
 });
 camera.start();
 
-function checkForHeart() {
-    if (path.length < 30) return; // Minimum strokes required
+// Voice Recognition Setup with error handling and auto-restart
+const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+recognition.continuous = true;
+recognition.interimResults = true;
 
-    let minX = Math.min(...path.map(p => p.x));
-    let maxX = Math.max(...path.map(p => p.x));
-    let minY = Math.min(...path.map(p => p.y));
-    let maxY = Math.max(...path.map(p => p.y));
+// Exponential backoff for recognition restarts
+let restartAttempts = 0;
+const MAX_RESTART_DELAY = 30000; // Maximum 30 second delay
 
-    let width = maxX - minX;
-    let height = maxY - minY;
-    let aspectRatio = width / height;
-
-    if (color !== "pink") return;
-
-    // Check for a circle (roughly equal width & height)
-    if (aspectRatio >= 0.8 && aspectRatio <= 1.2 && width >= 30 && height >= 30) {
-        console.log("⭕ Pink Circle Detected! Playing Sound...");
-        heartSound.play().catch(e => console.log("Sound play blocked:", e));
-        path = [];
-        return;
-    }
-
-    // Check for a heart shape (wider aspect ratio tolerance)
-    if (aspectRatio >= 0.4 && aspectRatio <= 1.7 && width >= 30 && height >= 30) {
-        let centerX = (minX + maxX) / 2;
-        let leftSide = path.filter(p => p.x < centerX);
-        let rightSide = path.filter(p => p.x > centerX);
-
-        if (Math.abs(leftSide.length - rightSide.length) > 50) return;
-
-        let bottomPoint = path.reduce((a, b) => (a.y > b.y ? a : b));
-        if (bottomPoint.y < maxY - 25) return; // Increased tolerance for imperfect bottom
-
-        console.log("💖 Pink Heart Detected! Playing Sound...");
-        heartSound.play().catch(e => console.log("Sound play blocked:", e));
-        
-        path = [];
+// Function to restart recognition with exponential backoff
+function restartRecognition() {
+    try {
+        recognition.stop();
+        const delay = Math.min(Math.pow(2, restartAttempts) * 1000, MAX_RESTART_DELAY);
+        setTimeout(() => {
+            try {
+                recognition.start();
+                console.log("Recognition restarted after delay:", delay);
+                restartAttempts = Math.max(0, restartAttempts - 1); // Reduce attempt count on successful restart
+            } catch (e) {
+                console.error("Failed to restart recognition:", e);
+                restartAttempts++;
+                restartRecognition();
+            }
+        }, delay);
+    } catch (e) {
+        console.error("Error in recognition restart:", e);
     }
 }
 
+// Add error handling for recognition
+recognition.onerror = (event) => {
+    console.error("Speech recognition error:", event.error);
+    restartAttempts++;
+    restartRecognition();
+};
+
+recognition.onend = () => {
+    console.log("Speech recognition ended, restarting...");
+    restartRecognition();
+};
+
+// Function to evaluate mathematical expressions with improved error handling and debugging
+function evaluateExpression(expression) {
+    try {
+        console.log('Original expression:', expression);
+        
+        // Remove all spaces and validate input
+        expression = expression.replace(/\s+/g, '');
+        
+        // Basic input validation
+        if (!expression) {
+            throw new Error('Empty expression');
+        }
+        
+        if (!/^[0-9+\-*/^().]+$/.test(expression)) {
+            throw new Error('Invalid characters in expression');
+        }
+        
+        console.log('Cleaned expression:', expression);
+        
+        // Basic arithmetic operations with validation
+        const operators = {
+            '+': (a, b) => {
+                if (isNaN(a) || isNaN(b)) throw new Error('Invalid operands for addition');
+                return a + b;
+            },
+            '-': (a, b) => {
+                if (isNaN(a) || isNaN(b)) throw new Error('Invalid operands for subtraction');
+                return a - b;
+            },
+            '*': (a, b) => {
+                if (isNaN(a) || isNaN(b)) throw new Error('Invalid operands for multiplication');
+                return a * b;
+            },
+            '/': (a, b) => {
+                if (isNaN(a) || isNaN(b)) throw new Error('Invalid operands for division');
+                if (b === 0) throw new Error('Division by zero');
+                return a / b;
+            },
+            '^': (a, b) => {
+                if (isNaN(a) || isNaN(b)) throw new Error('Invalid operands for exponentiation');
+                return Math.pow(a, b);
+            }
+        };
+        
+        // Split by operators while keeping them
+        const tokens = expression.split(/([+\-*/^()])/).filter(token => token.length > 0);
+        console.log('Initial tokens:', tokens);
+        
+        // Validate balanced parentheses
+        let parenCount = 0;
+        for (let char of expression) {
+            if (char === '(') parenCount++;
+            if (char === ')') parenCount--;
+            if (parenCount < 0) throw new Error('Unmatched closing parenthesis');
+        }
+        if (parenCount !== 0) throw new Error('Unmatched opening parenthesis');
+        
+        // Handle parentheses first
+        while (tokens.includes('(')) {
+            console.log('Processing parentheses, current tokens:', tokens);
+            const openIndex = tokens.lastIndexOf('(');
+            const closeIndex = tokens.indexOf(')', openIndex);
+            if (closeIndex === -1) throw new Error('Mismatched parentheses');
+            
+            const subExpression = tokens.slice(openIndex + 1, closeIndex).join('');
+            console.log('Evaluating sub-expression:', subExpression);
+            const result = evaluateExpression(subExpression);
+            tokens.splice(openIndex, closeIndex - openIndex + 1, result.toString());
+            console.log('After parentheses evaluation:', tokens);
+        }
+        
+        // Evaluate exponents first
+        for (let i = 1; i < tokens.length; i += 2) {
+            if (tokens[i] === '^') {
+                console.log('Processing exponentiation:', tokens[i-1], '^', tokens[i+1]);
+                const result = operators['^'](parseFloat(tokens[i-1]), parseFloat(tokens[i+1]));
+                tokens.splice(i-1, 3, result.toString());
+                i -= 2;
+                console.log('After exponentiation:', tokens);
+            }
+        }
+        
+        // Evaluate multiplication and division
+        for (let i = 1; i < tokens.length; i += 2) {
+            if (tokens[i] === '*' || tokens[i] === '/') {
+                console.log('Processing multiplication/division:', tokens[i-1], tokens[i], tokens[i+1]);
+                const result = operators[tokens[i]](parseFloat(tokens[i-1]), parseFloat(tokens[i+1]));
+                tokens.splice(i-1, 3, result.toString());
+                i -= 2;
+                console.log('After multiplication/division:', tokens);
+            }
+        }
+        
+        // Validate first token is a number for addition/subtraction
+        if (tokens.length > 0 && isNaN(parseFloat(tokens[0]))) {
+            throw new Error('Expression must start with a number');
+        }
+        
+        // Then evaluate addition and subtraction
+        let result = parseFloat(tokens[0]);
+        for (let i = 1; i < tokens.length; i += 2) {
+            console.log('Processing addition/subtraction:', result, tokens[i], tokens[i+1]);
+            if (!operators[tokens[i]]) {
+                throw new Error('Invalid operator: ' + tokens[i]);
+            }
+            result = operators[tokens[i]](result, parseFloat(tokens[i+1]));
+            console.log('Current result:', result);
+        }
+        
+        // Check for invalid result
+        if (isNaN(result) || !isFinite(result)) {
+            throw new Error('Invalid result');
+        }
+        
+        console.log('Final result:', result);
+        return Math.round(result * 1000) / 1000; // Round to 3 decimal places
+        
+    } catch (error) {
+        console.error('Expression evaluation error:', error.message);
+        return 'Error: ' + error.message;
+    }
+}
+
+// Add keyboard event listener for 'T' key and text input
+document.addEventListener('keydown', (e) => {
+    // Toggle text input mode with 'T' key
+    if (e.key.toLowerCase() === 't' && !isTyping) {
+        isTyping = true;
+        drawing = false; // Disable drawing while typing
+        overlayCanvas.style.cursor = 'text';
+        // Center initial cursor position
+        textX = overlayCanvas.width / 2;
+        textY = overlayCanvas.height / 2;
+        console.log("Text input mode activated");
+        return;
+    }
+
+    // Handle text input when in typing mode
+    if (isTyping) {
+        const ctx = overlayCanvas.getContext('2d');
+        ctx.font = '24px Arial'; // Larger font size
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center'; // Center align text
+        ctx.textBaseline = 'middle'; // Vertically center text
+
+        // Handle Escape key to exit text mode
+        if (e.key === 'Escape') {
+            isTyping = false;
+            currentText = '';
+            overlayCanvas.style.cursor = 'default';
+            console.log("Text input mode deactivated");
+            return;
+        }
+
+        // Handle Backspace
+        if (e.key === 'Backspace') {
+            if (currentText.length > 0) {
+                // Clear the text area
+                const textMetrics = ctx.measureText(currentText);
+                ctx.clearRect(
+                    textX - textMetrics.width/2 - 10,
+                    textY - 30,
+                    textMetrics.width + 20,
+                    60
+                );
+                currentText = currentText.slice(0, -1);
+                // Redraw the text
+                ctx.fillText(currentText + '|', textX, textY);
+            }
+            e.preventDefault();
+            return;
+        }
+
+        // Handle Enter key to evaluate expression and show result
+        if (e.key === 'Enter' && isTyping) {
+            if (currentText.length > 0) {
+                try {
+                    // Check if the text looks like a mathematical expression
+                    if (/[\d+\-*/^()]/.test(currentText)) {
+                        console.log('Attempting to evaluate expression:', currentText);
+                        const result = evaluateExpression(currentText);
+                        
+                        // Clear the current text area
+                        const textMetrics = ctx.measureText(currentText);
+                        ctx.clearRect(
+                            textX - textMetrics.width/2 - 10,
+                            textY - 30,
+                            textMetrics.width + 20,
+                            60
+                        );
+                        
+                        // Show expression and result
+                        const finalText = typeof result === 'string' && result.startsWith('Error') 
+                            ? result  // Show error message
+                            : `${currentText} = ${result}`; // Show calculation
+                        
+                        ctx.fillText(finalText, textX, textY);
+                        console.log('Displayed result:', finalText);
+                    } else {
+                        // Not a mathematical expression, just display the text
+                        ctx.fillText(currentText, textX, textY);
+                    }
+                    
+                    currentText = '';
+                    textY += 40; // Move down for next input
+                    
+                } catch (error) {
+                    console.error('Error handling expression:', error);
+                    ctx.fillText('Error in calculation', textX, textY);
+                    currentText = '';
+                    textY += 40;
+                }
+            }
+            return;
+        }
+
+        // Handle regular text input
+        if (e.key.length === 1) {
+            // Clear previous text and cursor
+            const textMetrics = ctx.measureText(currentText);
+            ctx.clearRect(
+                textX - textMetrics.width/2 - 10,
+                textY - 30,
+                textMetrics.width + 20,
+                60
+            );
+            currentText += e.key;
+            // Draw updated text with cursor
+            ctx.fillText(currentText + '|', textX, textY);
+        }
+    }
+});
+
+// Add click handler for text placement
+overlayCanvas.addEventListener('click', (e) => {
+    if (isTyping) {
+        textX = e.offsetX;
+        textY = e.offsetY;
+        currentText = '';
+        
+        // Show initial cursor
+        const ctx = overlayCanvas.getContext('2d');
+        ctx.font = '24px Arial';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('|', textX, textY);
+    }
+});
+
+// Update voice commands to include text mode
+recognition.onresult = (event) => {
+    const now = Date.now();
+    if (now - lastCommandTime < COMMAND_DEBOUNCE) return;
+    
+    const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+    console.log(`Voice command received: ${command}`);
+
+    lastCommandTime = now;
+
+    if (command === "start drawing") {
+        drawing = true;
+        isTyping = false; // Disable text mode when drawing
+        console.log("Drawing started");
+    }
+    if (command === "stop drawing") {
+        drawing = false;
+        console.log("Drawing stopped");
+    }
+    if (command === "start typing") {
+        isTyping = true;
+        drawing = false;
+        overlayCanvas.style.cursor = 'text';
+        console.log("Text input mode activated");
+    }
+    if (command === "stop typing") {
+        isTyping = false;
+        currentText = '';
+        overlayCanvas.style.cursor = 'default';
+        console.log("Text input mode deactivated");
+    }
+    if (command === "clear canvas") {
+        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+        path = [];
+        console.log("Canvas cleared by voice command");
+    }
+    if (command === "take screenshot") {
+        const link = document.createElement('a');
+        link.href = overlayCanvas.toDataURL('image/png');
+        link.download = 'screenshot.png';
+        link.click();
+        console.log("Screenshot taken");
+    }
+
+    // AI Object Drawing with optimized animation
+    for (let object in aiDrawingTemplates) {
+        if (command === `draw ${object}`) {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+            path = [];
+            aiDrawing = true;
+            drawing = true;
+            aiDrawingGenerator = drawObject(aiDrawingTemplates[object]);
+            
+            // Optimize animation frame rate
+            let lastFrameTime = 0;
+            const FRAME_INTERVAL = 1000 / 30; // 30 FPS
+            
+            function animateDrawing(timestamp) {
+                if (lastFrameTime === 0) lastFrameTime = timestamp;
+                const elapsed = timestamp - lastFrameTime;
+                
+                if (elapsed >= FRAME_INTERVAL) {
+                    if (!aiDrawingGenerator.next().done) {
+                        lastFrameTime = timestamp;
+                        requestAnimationFrame(animateDrawing);
+                    }
+                } else {
+                    requestAnimationFrame(animateDrawing);
+                }
+            }
+            
+            requestAnimationFrame(animateDrawing);
+            break;
+        }
+    }
+};
+
+// Start recognition with error handling
+try {
+    recognition.start();
+} catch (e) {
+    console.error("Error starting recognition:", e);
+    // Retry after a short delay
+    setTimeout(() => {
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error("Failed to start recognition after retry:", e);
+            restartRecognition();
+        }
+    }, 1000);
+}
 
 // Standard Colors
 const standardColors = ["red", "blue", "green", "yellow", "black", "white", "pink", "purple", "orange", "brown", "gray"];
@@ -395,54 +761,45 @@ function* drawObject(objectPoints) {
     drawing = false;
 }
 
-// Voice Recognition Setup
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-recognition.continuous = true;
-recognition.onresult = (event) => {
-    const command = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
-    console.log(`Voice command received: ${command}`);
+function checkForHeart() {
+    if (path.length < 30) return; // Minimum strokes required
 
-    if (command === "start drawing") {
-        drawing = true;
-        console.log("Drawing started");
-    }
-    if (command === "stop drawing") {
-        drawing = false;
-        console.log("Drawing stopped");
-    }
-    if (command === "clear canvas") {
-        overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+    let minX = Math.min(...path.map(p => p.x));
+    let maxX = Math.max(...path.map(p => p.x));
+    let minY = Math.min(...path.map(p => p.y));
+    let maxY = Math.max(...path.map(p => p.y));
+
+    let width = maxX - minX;
+    let height = maxY - minY;
+    let aspectRatio = width / height;
+
+    if (color !== "pink") return;
+
+    // Check for a circle (roughly equal width & height)
+    if (aspectRatio >= 0.8 && aspectRatio <= 1.2 && width >= 30 && height >= 30) {
+        console.log("⭕ Pink Circle Detected! Playing Sound...");
+        heartSound.play().catch(e => console.log("Sound play blocked:", e));
         path = [];
-        console.log("Canvas cleared by voice command");
-    }
-    if (command === "take screenshot") {
-        const link = document.createElement('a');
-        link.href = overlayCanvas.toDataURL('image/png');
-        link.download = 'screenshot.png';
-        link.click();
-        console.log("Screenshot taken");
+        return;
     }
 
-    // AI Object Drawing Detection
-    for (let object in aiDrawingTemplates) {
-        if (command === `draw ${object}`) {
-            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-            path = [];
-            aiDrawing = true;
-            drawing = true;
-            aiDrawingGenerator = drawObject(aiDrawingTemplates[object]);
-            function animateDrawing() {
-                if (!aiDrawingGenerator.next().done) {
-                    requestAnimationFrame(animateDrawing);
-                }
-            }
-            animateDrawing();
-            break;
-        }
-    }
-};
+    // Check for a heart shape (wider aspect ratio tolerance)
+    if (aspectRatio >= 0.4 && aspectRatio <= 1.7 && width >= 30 && height >= 30) {
+        let centerX = (minX + maxX) / 2;
+        let leftSide = path.filter(p => p.x < centerX);
+        let rightSide = path.filter(p => p.x > centerX);
 
-recognition.start();
+        if (Math.abs(leftSide.length - rightSide.length) > 50) return;
+
+        let bottomPoint = path.reduce((a, b) => (a.y > b.y ? a : b));
+        if (bottomPoint.y < maxY - 25) return; // Increased tolerance for imperfect bottom
+
+        console.log("💖 Pink Heart Detected! Playing Sound...");
+        heartSound.play().catch(e => console.log("Sound play blocked:", e));
+        
+        path = [];
+    }
+}
 
 // Button Event Listeners
 document.getElementById("startDrawing").addEventListener("click", () => {
